@@ -199,3 +199,125 @@ class SmartBookModern:
         sb = ttk.Scrollbar(f_table, orient=tk.VERTICAL, command=self.tree.yview); self.tree.configure(yscrollcommand=sb.set); sb.pack(side=tk.RIGHT, fill=tk.Y)
         self.lbl_log = tk.Label(right, text="Copyright ©️ 2026 SmartBook. All rights reserved.", font=(FONT_FAMILY, 9, "italic"), bg=PAL["bg"], fg=PAL["sub"]); self.lbl_log.pack(anchor=tk.W, pady=5)
         self.refresh_tabel()
+        
+    def refresh_tabel(self, min_rating=None):
+        for row in self.tree.get_children(): self.tree.delete(row)
+        data_ll = []
+        curr = self.db_ll.head
+        while curr:
+            if min_rating is None or curr.rating >= min_rating:
+                data_ll.append([curr.nama, curr.buku, curr.rating])
+            curr = curr.next
+        for name, book, rat in bubble_sort.sort(data_ll): self.tree.insert("", tk.END, values=(name, book, "⭐" * rat))
+
+    def on_tree_select(self, event):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            return
+        item_data = self.tree.item(selected_items[0])["values"]
+        if item_data:
+            nama, buku, rating_str = item_data
+            
+            # Isi input fields nama
+            self.en_nama.delete(0, tk.END)
+            self.en_nama.insert(0, nama)
+            
+            # Isi input fields judul buku
+            self.en_buku.delete(0, tk.END)
+            self.en_buku.insert(0, buku)
+            
+            # Atur bintang rating
+            rating = str(rating_str).count("⭐")
+            self.set_stars(rating)
+
+    def log(self, text):
+        self.log_qu.enqueue(text)
+        self.lbl_log.config(text=f"Log: {self.log_qu.items[-1] if self.log_qu.items else 'Kosong'}")
+
+    def aksi_create(self):
+        n, b, r = self.en_nama.get().strip(), self.en_buku.get().strip(), self.current_rating
+        if not n or not b or r == 0:
+            messagebox.showwarning("Gagal", "Lengkapi seluruh data! (nama, judul, dan bintang)"); return
+        self.db_ll.insert(n, b, r); self.db_bst.insert(b, r); self.undo_st.push(("CREATE", n, b, r))
+        self.log(f"Ulasan '{b}' berhasil ditambahkan.")
+        self.simpan_ke_file() # Simpan perubahan
+        self.refresh_tabel(); self._clear()
+
+    def aksi_update(self):
+        n, b, r = self.en_nama.get().strip(), self.en_buku.get().strip(), self.current_rating
+        if not n or not b or r == 0: return
+        if self.db_ll.update(n, b, r):
+            self.db_bst.insert(b, r); self.undo_st.push(("UPDATE", n, b, r))
+            self.log(f"Ulasan '{b}' diperbarui menjadi {r}⭐.")
+            self.simpan_ke_file() # Simpan hanya jika sukses
+            self.refresh_tabel(); self._clear()
+        else: messagebox.showerror("Error", "Ulasan tidak ditemukan.")
+
+    def aksi_delete(self):
+        n, b = self.en_nama.get().strip(), self.en_buku.get().strip()
+        if not n or not b: return
+        if self.db_ll.delete(n, b):
+            self.db_bst = bst(); curr = self.db_ll.head
+            while curr: self.db_bst.insert(curr.buku, curr.rating); curr = curr.next
+            self.log(f"Menghapus ulasan {n} pada buku '{b}'.")
+            self.simpan_ke_file() # Simpan setelah penghapusan sukses
+            self.refresh_tabel(); self._clear()
+        else: messagebox.showerror("Error", "Tidak ada ulasan yang sesuai.")
+
+    def aksi_cari_bst(self):
+        target = self.en_cari.get().strip()
+        if not target or target == self.placeholder_text: return
+        
+        # Hapus sorotan sebelumnya
+        self.tree.selection_remove(self.tree.selection())
+        target_lower = target.lower()
+        
+        matched_items = []
+        
+        # Kumpulkan semua data yang sesuai
+        for child in self.tree.get_children():
+            val = self.tree.item(child)["values"]
+            if val and (target_lower in str(val[0]).lower() or target_lower in str(val[1]).lower() or target_lower in str(val[2]).lower()):
+                matched_items.append(child)
+        
+        # Pindahkan ke paling atas dan sorot
+        for index, child in enumerate(matched_items):
+            self.tree.move(child, '', index) # Menggeser ke index teratas
+            self.tree.selection_add(child)
+            
+        if matched_items:
+            self.tree.see(matched_items[0]) # Auto-scroll ke paling atas
+            self.log(f"Berhasil menemukan dan memindahkan {len(matched_items)} data untuk '{target}'.")
+        else:
+            self.log(f"Data '{target}' tidak ditemukan.")
+
+    def aksi_top_rated(self):
+        val = self.cb_filter.get()
+        if val == "Semua":
+            self.refresh_tabel()
+            self.log("Menampilkan semua ulasan.")
+        else:
+            try:
+                min_r = int(val.split()[1])
+                self.refresh_tabel(min_rating=min_r)
+                self.log(f"Menampilkan ulasan dengan rating ≥ {min_r}⭐.")
+            except (IndexError, ValueError):
+                self.refresh_tabel()
+
+    def proses_undo(self):
+        act = self.undo_st.pop()
+        if not act: return
+        if act[0] == "CREATE": self.db_ll.delete(act[1], act[2])
+        elif act[0] == "UPDATE": self.db_ll.update(act[1], act[2], 3)
+        self.log("Rewind."); self.refresh_tabel()
+
+    def _clear(self): self.en_nama.delete(0, tk.END); self.en_buku.delete(0, tk.END); self.set_stars(0)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SmartBookModern(root)
+    root.mainloop()
+
+
+    
+        
