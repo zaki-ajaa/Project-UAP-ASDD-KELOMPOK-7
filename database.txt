@@ -1,0 +1,27 @@
+Andi|Struktur Data C++|5
+Budi|Algoritma Python|4
+Citra|Pemrograman Java untuk Pemula|3
+Dewi|Pengenalan Machine Learning|5
+Eko|Dasar-Dasar Jaringan Komputer|5
+Fajar|Belajar Web Development dengan React|5
+Gita|Sistem Operasi Modern|4
+Hadi|Keamanan Siber untuk Pemula|3
+Indah|Basis Data SQL dan NoSQL|5
+Joko|Pemrograman Kotlin untuk Android|4
+Kartika|Desain UI/UX dengan Figma|5
+Lutfi|Data Science menggunakan Python|4
+Mega|Pengantar Kecerdasan Buatan|5
+Nova|Cloud Computing dan AWS|4
+Oki|Pemrograman C# dan .NET|3
+Putri|Pengembangan Game dengan Unity|5
+Qori|Metodologi Agile dan Scrum|4
+Rian|Pemrograman R untuk Statistika|4
+Sinta|Kriptografi Modern|5
+Tono|Internet of Things (IoT) Praktis|4
+Umi|Analisis Algoritma dan Kompleksitas|5
+Vina|Pemrograman Go untuk Backend|5
+Wahyu|Pengembangan Aplikasi Flutter|4
+Xena|Docker dan Kubernetes untuk DevOps|5
+Yudi|Pemrograman Swift untuk iOS|4
+Zaki|Kecerdasan Buatan dalam Robotika|5
+Rina|Sistem Informasi Manajemen|3
