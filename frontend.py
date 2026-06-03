@@ -31,6 +31,7 @@ class RoundedButton(tk.Canvas):
         self.create_rectangle(0, r, w, h-r, fill=color, outline="", tags="bg_shape")
 
     def change_color(self, color): self.itemconfig("bg_shape", fill=color)
+
     def resolve_colors(self):
         if self.bg_color == PAL["green"]: self.hover_color, self.pressed_color = PAL["green_hover"], PAL["green_pressed"]
         elif self.bg_color == PAL["blue"]: self.hover_color, self.pressed_color = PAL["blue_hover"], PAL["blue_pressed"]
@@ -99,7 +100,7 @@ class SmartBookModern:
         self.main_frame.bind("<Configure>", lambda e: self.scroll_canvas.configure(scrollregion=self.scroll_canvas.bbox("all")))
         self.scroll_canvas.bind("<Configure>", lambda e: self.scroll_canvas.itemconfig(self.canvas_window, width=e.width))
         self.scroll_canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units") if event.delta else None)
-
+       
         self.root.bind("<Configure>", self.cek_responsif)
         self.build_interface(is_mobile_view=False)
 
@@ -140,13 +141,12 @@ class SmartBookModern:
         left = ttk.Frame(body); left.pack(side="top" if is_mobile_view else "left", fill="both", expand=True, padx=5)
         right = ttk.Frame(body); right.pack(side="top" if is_mobile_view else "right", fill="both", expand=True, padx=20)
 
-        #PANEL KIRI (CRUD Input)
         f_crud = ttk.LabelFrame(left, text=" Input Ulasan ", style="Card.TLabelframe", padding=20)
         f_crud.pack(fill=tk.X, pady=(0, 20))
 
         for lbl_text, var_name in [("NAMA PENGGUNA", "en_nama"), ("JUDUL BUKU", "en_buku")]:
             tk.Label(f_crud, text=lbl_text, font=(FONT_FAMILY, 9, "bold"), bg=PAL["card"], fg=PAL["sub"]).pack(anchor=tk.W)
-            # Pointer diatur melalui insertbackground="black"
+            # Pointer diatur melalui insertbackground "black"
             entry = tk.Entry(f_crud, font=(FONT_FAMILY, 11), relief="flat", bg="#FFFFFF", fg=PAL["text"], insertbackground="black", highlightthickness=1, highlightbackground=PAL["border"])
             entry.pack(fill=tk.X, ipady=7, pady=(4, 12))
             setattr(self, var_name, entry)
@@ -164,15 +164,12 @@ class SmartBookModern:
         RoundedButton(btn_box, "Update", self.aksi_update, width=100, height=36, radius=12, bg_color=PAL["blue"]).pack(side=tk.LEFT, padx=3)
         RoundedButton(btn_box, "Delete", self.aksi_delete, width=100, height=36, radius=12, bg_color=PAL["danger"]).pack(side=tk.LEFT, padx=3)
 
-        #PANEL KANAN (Tabel & Pencarian)
         f_table = ttk.LabelFrame(right, text=" Database Ulasan ", style="Card.TLabelframe", padding=15)
         f_table.pack(fill=tk.BOTH, expand=True)
 
-        # Baris Pencarian
         search_bar = tk.Frame(f_table, bg=PAL["card"])
         search_bar.pack(fill=tk.X, pady=(5, 10))
         
-        # Pointer diatur melalui insertbackground="black"
         self.en_cari = tk.Entry(search_bar, font=(FONT_FAMILY, 10), relief="flat", bg="#F9F9FB", fg=PAL["sub"], insertbackground="black", highlightthickness=1, highlightbackground=PAL["border"])
         self.en_cari.insert(0, self.placeholder_text)
         self.en_cari.bind("<FocusIn>", self.search_focus_in)
@@ -181,7 +178,6 @@ class SmartBookModern:
         
         RoundedButton(search_bar, "Cari", self.aksi_cari_bst, width=90, height=32, radius=10, bg_color=PAL["green"]).pack(side=tk.LEFT)
 
-        # Baris Filter
         filter_bar = tk.Frame(f_table, bg=PAL["card"])
         filter_bar.pack(fill=tk.X, pady=(0, 15))
         tk.Label(filter_bar, text="Filter Rating:", font=(FONT_FAMILY, 9, "bold"), bg=PAL["card"], fg=PAL["text"]).pack(side=tk.LEFT, padx=(5, 10))
@@ -189,17 +185,17 @@ class SmartBookModern:
         self.cb_filter.pack(side=tk.LEFT, padx=5); self.cb_filter.current(0)
         RoundedButton(filter_bar, "Filter", self.aksi_top_rated, width=90, height=30, radius=8, bg_color=PAL["blue"]).pack(side=tk.LEFT, padx=10)
 
-        # Tabel
         self.tree = ttk.Treeview(f_table, columns=("n", "b", "r"), show="headings", style="Custom.Treeview", height=10 if is_mobile_view else 14)
         self.tree.heading("n", text="Pengguna"); self.tree.heading("b", text="Judul Buku"); self.tree.heading("r", text="Rating")
         self.tree.column("n", width=100, anchor=tk.CENTER); self.tree.column("b", width=220); self.tree.column("r", width=80, anchor=tk.CENTER)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
-
-        sb = ttk.Scrollbar(f_table, orient=tk.VERTICAL, command=self.tree.yview); self.tree.configure(yscrollcommand=sb.set); sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self.lbl_log = tk.Label(right, text="Copyright ©️ 2026 SmartBook. All rights reserved.", font=(FONT_FAMILY, 9, "italic"), bg=PAL["bg"], fg=PAL["sub"]); self.lbl_log.pack(anchor=tk.W, pady=5)
-        self.refresh_tabel()
+        self.tree.bind("<Button-1>", self.on_tree_click)
         
+        sb = ttk.Scrollbar(f_table, orient=tk.VERTICAL, command=self.tree.yview); self.tree.configure(yscrollcommand=sb.set); sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.lbl_log = tk.Label(right, text="Copyright © 2026 SmartBook. All rights reserved.", font=(FONT_FAMILY, 9, "italic"), bg=PAL["bg"], fg=PAL["sub"]); self.lbl_log.pack(anchor=tk.W, pady=5)
+        self.refresh_tabel()
+
     def refresh_tabel(self, min_rating=None):
         for row in self.tree.get_children(): self.tree.delete(row)
         data_ll = []
@@ -213,22 +209,27 @@ class SmartBookModern:
     def on_tree_select(self, event):
         selected_items = self.tree.selection()
         if not selected_items:
+            self._clear()
             return
         item_data = self.tree.item(selected_items[0])["values"]
         if item_data:
             nama, buku, rating_str = item_data
             
-            # Isi input fields nama
             self.en_nama.delete(0, tk.END)
             self.en_nama.insert(0, nama)
             
-            # Isi input fields judul buku
             self.en_buku.delete(0, tk.END)
             self.en_buku.insert(0, buku)
             
-            # Atur bintang rating
             rating = str(rating_str).count("⭐")
             self.set_stars(rating)
+
+    def on_tree_click(self, event):
+        row = self.tree.identify_row(event.y)
+        if row and row in self.tree.selection():
+            self.tree.selection_remove(row)
+            self._clear()
+            return "break"
 
     def log(self, text):
         self.log_qu.enqueue(text)
@@ -240,7 +241,7 @@ class SmartBookModern:
             messagebox.showwarning("Gagal", "Lengkapi seluruh data! (nama, judul, dan bintang)"); return
         self.db_ll.insert(n, b, r); self.db_bst.insert(b, r); self.undo_st.push(("CREATE", n, b, r))
         self.log(f"Ulasan '{b}' berhasil ditambahkan.")
-        self.simpan_ke_file() # Simpan perubahan
+        self.simpan_ke_file()
         self.refresh_tabel(); self._clear()
 
     def aksi_update(self):
@@ -249,7 +250,7 @@ class SmartBookModern:
         if self.db_ll.update(n, b, r):
             self.db_bst.insert(b, r); self.undo_st.push(("UPDATE", n, b, r))
             self.log(f"Ulasan '{b}' diperbarui menjadi {r}⭐.")
-            self.simpan_ke_file() # Simpan hanya jika sukses
+            self.simpan_ke_file()
             self.refresh_tabel(); self._clear()
         else: messagebox.showerror("Error", "Ulasan tidak ditemukan.")
 
@@ -260,7 +261,7 @@ class SmartBookModern:
             self.db_bst = bst(); curr = self.db_ll.head
             while curr: self.db_bst.insert(curr.buku, curr.rating); curr = curr.next
             self.log(f"Menghapus ulasan {n} pada buku '{b}'.")
-            self.simpan_ke_file() # Simpan setelah penghapusan sukses
+            self.simpan_ke_file()
             self.refresh_tabel(); self._clear()
         else: messagebox.showerror("Error", "Tidak ada ulasan yang sesuai.")
 
@@ -268,25 +269,22 @@ class SmartBookModern:
         target = self.en_cari.get().strip()
         if not target or target == self.placeholder_text: return
         
-        # Hapus sorotan sebelumnya
         self.tree.selection_remove(self.tree.selection())
         target_lower = target.lower()
         
         matched_items = []
         
-        # Kumpulkan semua data yang sesuai
         for child in self.tree.get_children():
             val = self.tree.item(child)["values"]
             if val and (target_lower in str(val[0]).lower() or target_lower in str(val[1]).lower() or target_lower in str(val[2]).lower()):
                 matched_items.append(child)
         
-        # Pindahkan ke paling atas dan sorot
         for index, child in enumerate(matched_items):
-            self.tree.move(child, '', index) # Menggeser ke index teratas
+            self.tree.move(child, '', index)
             self.tree.selection_add(child)
             
         if matched_items:
-            self.tree.see(matched_items[0]) # Auto-scroll ke paling atas
+            self.tree.see(matched_items[0])
             self.log(f"Berhasil menemukan dan memindahkan {len(matched_items)} data untuk '{target}'.")
         else:
             self.log(f"Data '{target}' tidak ditemukan.")
@@ -317,7 +315,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SmartBookModern(root)
     root.mainloop()
-
-
-    
-        
